@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.env
+*.log
+guardrail.db
+audit_log.json
+.pytest_cache/
+.git/
+.gitignore
+tests/

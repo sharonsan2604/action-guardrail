@@ -1,0 +1,70 @@
+# AI Action Guardrail - Policy Rules
+# Format: each rule has a name, tool, condition, and action
+# Actions: block | require_hitl | log_and_allow | semantic_check
+# Rules are checked top to bottom. First match wins.
+
+rules:
+  # ---- DELETE_RECORDS extended rules ----
+  - name: block_audit_table_delete
+    description: Never allow deletion from audit or log tables
+    tool: delete_records
+    condition: "'audit' in params.table or 'log' in params.table"
+    action: block
+
+  - name: block_bulk_delete
+    description: Block database deletes over 100 records
+    tool: delete_records
+    condition: params.count > 100
+    action: block
+
+  - name: hitl_any_delete_financial_table
+    description: Any delete on financial tables needs human review
+    tool: delete_records
+    condition: "'financ' in params.table or 'payment' in params.table or 'transaction' in params.table"
+    action: require_hitl
+
+  - name: hitl_medium_delete
+    description: Human review required for database deletes between 40 and 100 records
+    tool: delete_records
+    condition: 40 <= params.count <= 100
+    action: require_hitl
+
+  - name: semantic_check_medium_delete
+    description: Deletes between 10 and 100 records go to semantic eval
+    tool: delete_records
+    condition: params.count >= 10 and params.count <= 100
+    action: semantic_check
+
+  # ---- SEND_EMAIL extended rules ----
+  - name: block_bulk_email
+    description: Block emails to more than 50 recipients
+    tool: send_email
+    condition: "params.get('recipient_count', 1) > 50"
+    action: block
+
+  - name: hitl_external_email
+    description: Human review required for emails to external domains
+    tool: send_email
+    condition: params.domain != 'mycompany.com'
+    action: require_hitl
+
+  - name: semantic_check_all_internal_email
+    description: All internal emails go through semantic content check
+    tool: send_email
+    condition: params.domain == 'mycompany.com'
+    action: semantic_check
+
+  # ---- READ_FILE extended rules ----
+  - name: semantic_check_database_reads
+    description: Any direct database table read goes to semantic eval
+    tool: read_file
+    condition: "'.db' in params.path or 'database' in params.path"
+    action: semantic_check
+
+  - name: log_confidential_read
+    description: Log all reads of confidential file paths
+    tool: read_file
+    condition: "'confidential' in params.path"
+    action: log_and_allow
+
+default_action: log_and_allow

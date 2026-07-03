@@ -1,0 +1,47 @@
+# Data Classification Registry
+# Defines security sensitivity tags for tables, directories, and email recipients.
+# Sensitive data tags: PII, FINANCIAL, LEGAL_HOLD, INTERNAL_ONLY, EXECUTIVE, PUBLIC, SYSTEM.
+
+tables:
+  customers:        [PII]
+  users:            [PII]
+  employees:        [PII, FINANCIAL]
+  salaries:         [PII, FINANCIAL]
+  transactions:     [FINANCIAL]
+  payments:         [FINANCIAL]
+  audit_trail:      [LEGAL_HOLD]
+  system_logs:      [LEGAL_HOLD, SYSTEM]
+  board_minutes:    [EXECUTIVE]
+  public_content:   [PUBLIC]
+  products:         [PUBLIC]
+
+paths:
+  /data/hr/:            [PII, FINANCIAL]
+  /data/payroll/:       [PII, FINANCIAL]
+  /data/confidential/:  [PII, FINANCIAL, LEGAL_HOLD]
+  /reports/board/:      [EXECUTIVE]
+  /reports/financial/:  [FINANCIAL]
+  /config/:             [SYSTEM]
+  /logs/:               [LEGAL_HOLD]
+  /public/:             [PUBLIC]
+  /common_files/:       []   # unclassified — triggers semantic eval
+
+email_recipients:
+  executive_team:       [EXECUTIVE]
+  board@mycompany.com:  [EXECUTIVE]
+  hr@mycompany.com:     [PII]
+  finance@mycompany.com: [FINANCIAL]
+
+email_keywords_high_risk:
+  - salary
+  - compensation
+  - confidential
+  - board
+  - acquisition
+  - lawsuit
+  - termination
+  - password
+  - credentials
+
+# Default for anything NOT in this registry:
+unclassified_action: semantic_check  # send to LLM for evaluation
