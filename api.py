@@ -589,3 +589,8 @@ def get_audit_explanation(id: int) -> Dict[str, Any]:
         }
     finally:
         session.close()
+
+# Mount frontend build directory to serve dashboard static assets
+from fastapi.staticfiles import StaticFiles
+if os.path.exists("frontend/dist"):
+    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
