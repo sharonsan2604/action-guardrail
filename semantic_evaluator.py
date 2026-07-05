@@ -172,7 +172,11 @@ class SemanticEvaluator:
         
         AUDIT GUIDELINES:
         - For 'delete_records': Is deleting this many rows proportional to the agent's purpose? Does it touch critical table names?
-        - For 'send_email': Is the recipient appropriate for the role? Does the body contain sensitive information?
+        - For 'send_email':
+          - If the recipient domain is NOT 'mycompany.com' (e.g. gmail.com): This is an external email. Set recommendation to 'require_hitl' to enforce human review for outbound messaging.
+          - If the recipient domain IS 'mycompany.com' (internal) and the body contains sensitive information (like salary, compensation figures, executive board acquisition, passwords, etc.): Set recommendation to 'require_hitl'.
+          - If the recipient domain IS 'mycompany.com' (internal) and the body contains NO sensitive information (e.g., standard business updates, meeting slides): Set recommendation to 'allow'.
+          - If the recipient_count > 50: Set recommendation to 'block'.
         - For 'read_file': Is reading this file path consistent with what the agent is supposed to do?
         
         Respond ONLY in the following JSON format structure:
