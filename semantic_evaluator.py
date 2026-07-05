@@ -94,6 +94,19 @@ class SemanticEvaluator:
                 flags.append("external_email")
                 reasoning = "Interpreting email tool call to external domain. Outbound messages require human review."
 
+        # Scenario 3b: Internal email check (mycompany.com)
+        elif tool == "send_email" and params.get("domain", "") == "mycompany.com":
+            body = params.get("body", "").lower()
+            if any(term in body for term in ["salary", "compensation", "board", "acquisition", "lawsuit"]):
+                risk_score = 75
+                recommendation = "require_hitl"
+                flags.append("internal_sensitive_content")
+                reasoning = "Internal email contains high-risk keywords (salary/compensation/board) in body. Escaling for manual review."
+            else:
+                risk_score = 15
+                recommendation = "allow"
+                reasoning = "Internal email content verified as safe and appropriate."
+
         # Scenario 4: Reading confidential files outside normal workflow
         elif tool == "read_file" and "confidential" in params.get("path", "").lower():
             if any(word in purpose for word in ["analytics", "admin", "reports"]):
