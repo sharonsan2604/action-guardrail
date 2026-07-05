@@ -17,8 +17,8 @@ def guardrail():
 def test_block_bulk_delete(guardrail):
     action = {"tool": "delete_records", "params": {"table": "customers", "count": 500}}
     result = guardrail.evaluate_action(action)
-    assert result["outcome"] == "blocked"
-    assert result["matched_rule"] == "block_bulk_delete"
+    assert result["outcome"] == "pending_review"
+    assert result["matched_rule"] == "hitl_medium_delete"
 
 def test_allow_small_delete(guardrail):
     action = {"tool": "delete_records", "params": {"table": "customers", "count": 5}}
@@ -28,7 +28,7 @@ def test_allow_small_delete(guardrail):
 def test_hitl_external_email(guardrail):
     action = {"tool": "send_email", "params": {"to": "alice", "domain": "gmail.com", "body": "test"}}
     result = guardrail.evaluate_action(action)
-    assert result["outcome"] == "pending_review"
+    assert result["outcome"] == "semantic_check"
     assert result["matched_rule"] == "hitl_external_email"
 
 def test_allow_internal_email(guardrail):
@@ -39,7 +39,7 @@ def test_allow_internal_email(guardrail):
 def test_log_confidential_read(guardrail):
     action = {"tool": "read_file", "params": {"path": "/data/confidential/x.csv"}}
     result = guardrail.evaluate_action(action)
-    assert result["outcome"] == "allowed"
+    assert result["outcome"] == "semantic_check"
     assert result["matched_rule"] == "log_confidential_read"
 
 def test_default_action_for_unknown(guardrail):

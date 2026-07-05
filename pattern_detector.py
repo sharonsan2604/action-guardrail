@@ -204,24 +204,36 @@ class PatternDetector:
                 AuditEntry.tool == "delete_records"
             ).all()
 
+            # Sort entries by timestamp to find consecutive sequences
+            entries = sorted(entries, key=lambda e: e.timestamp)
+
             agent_deletes = {}
             for entry in entries:
                 agent_id = entry.params.get("agent_id", "unknown_agent") if isinstance(entry.params, dict) else "unknown_agent"
-                count = entry.params.get("count", 0) if isinstance(entry.params, dict) else 0
                 if agent_id not in agent_deletes:
-                    agent_deletes[agent_id] = {"count": 0, "entries": []}
-                agent_deletes[agent_id]["count"] += count
-                agent_deletes[agent_id]["entries"].append(entry)
+                    agent_deletes[agent_id] = []
+                agent_deletes[agent_id].append(entry)
 
-            for agent_id, data in agent_deletes.items():
-                total = data["count"]
-                if total > 100:
-                    evidence_ids = [e.id for e in data["entries"]]
+            for agent_id, agent_entries in agent_deletes.items():
+                current_streak = []
+                longest_streak = []
+                
+                for entry in agent_entries:
+                    count = entry.params.get("count", 0) if isinstance(entry.params, dict) else 0
+                    if 20 <= count <= 100:
+                        current_streak.append(entry)
+                        if len(current_streak) > len(longest_streak):
+                            longest_streak = list(current_streak)
+                    else:
+                        current_streak = []
+                
+                if len(longest_streak) > 5:
+                    evidence_ids = [e.id for e in longest_streak]
                     alerts.append(PatternAlert(
                         type="cumulative_deletion",
                         agent_id=agent_id,
                         severity="high",
-                        description=f"Agent '{agent_id}' deleted a cumulative total of {total} records across {len(evidence_ids)} requests in the last hour.",
+                        description=f"Agent '{agent_id}' deleted between 20 and 100 records continuously {len(evidence_ids)} times in the last hour.",
                         recommended_action="suspend_agent",
                         evidence=evidence_ids
                     ))

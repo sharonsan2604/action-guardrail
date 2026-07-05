@@ -184,3 +184,33 @@ def test_l4_cumulative_deletes_escalate():
     result = monitor.check_action("agent1", action, session_ctx)
     assert any("Cumulative deletes in last hour" in f for f in result.flags)
     assert result.anomaly_score >= 45
+
+def test_l5_consecutive_deletes_streak():
+    from pattern_detector import PatternDetector
+    from database import AuditEntry
+    
+    # Mock DB Session
+    mock_session = MagicMock()
+    
+    # Mock 6 consecutive delete entries within 20-100 range
+    entries = []
+    for i in range(6):
+        entry = MagicMock(spec=AuditEntry)
+        entry.id = i + 100
+        entry.timestamp = i  # incrementing timestamps
+        entry.tool = "delete_records"
+        entry.params = {"count": 50, "agent_id": "test_agent"}
+        entry.executed = False
+        entries.append(entry)
+        
+    mock_query = MagicMock()
+    mock_query.filter.return_value.all.return_value = entries
+    mock_session.query.return_value = mock_query
+    
+    detector = PatternDetector(mock_session)
+    alerts = detector.detect_cumulative_deletes_pattern()
+    
+    assert len(alerts) == 1
+    assert alerts[0].type == "cumulative_deletion"
+    assert alerts[0].agent_id == "test_agent"
+    assert len(alerts[0].evidence) == 6

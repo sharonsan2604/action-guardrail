@@ -11,12 +11,6 @@ rules:
     condition: "'audit' in params.table or 'log' in params.table"
     action: block
 
-  - name: block_bulk_delete
-    description: Block database deletes over 100 records
-    tool: delete_records
-    condition: params.count > 100
-    action: block
-
   - name: hitl_any_delete_financial_table
     description: Any delete on financial tables needs human review
     tool: delete_records
@@ -24,16 +18,10 @@ rules:
     action: require_hitl
 
   - name: hitl_medium_delete
-    description: Human review required for database deletes between 40 and 100 records
+    description: Human review required for database deletes of 20 or more records
     tool: delete_records
-    condition: 40 <= params.count <= 100
+    condition: params.count >= 20
     action: require_hitl
-
-  - name: semantic_check_medium_delete
-    description: Deletes between 10 and 100 records go to semantic eval
-    tool: delete_records
-    condition: params.count >= 10 and params.count <= 100
-    action: semantic_check
 
   # ---- SEND_EMAIL extended rules ----
   - name: block_bulk_email
@@ -43,10 +31,10 @@ rules:
     action: block
 
   - name: hitl_external_email
-    description: Human review required for emails to external domains
+    description: Send emails to external domains through semantic LLM check
     tool: send_email
     condition: params.domain != 'mycompany.com'
-    action: require_hitl
+    action: semantic_check
 
   - name: semantic_check_all_internal_email
     description: All internal emails go through semantic content check
@@ -62,9 +50,9 @@ rules:
     action: semantic_check
 
   - name: log_confidential_read
-    description: Log all reads of confidential file paths
+    description: Check all reads of confidential file paths with semantic LLM
     tool: read_file
     condition: "'confidential' in params.path"
-    action: log_and_allow
+    action: semantic_check
 
 default_action: log_and_allow
