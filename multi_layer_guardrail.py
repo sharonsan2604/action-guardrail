@@ -210,6 +210,11 @@ class MultiLayerGuardrail:
                 final_verdict = "allowed"
                 final_reason = "Action approved. All safety and semantic compliance checks passed."
 
+            # Apply user override: deletes below 20 records are always allowed (unless blocked)
+            if tool == "delete_records" and params.get("count", 0) < 20 and final_verdict != "blocked":
+                final_verdict = "allowed"
+                final_reason = f"Override: Database deletions below 20 records ({params.get('count')}) are automatically allowed."
+
             # Generate Human-Friendly detailed explanation context for HITL Reviews
             reviewer_context = ""
             if final_verdict == "pending_review":

@@ -141,15 +141,15 @@ def test_multilayer_hard_block_skips_later_layers():
 
 def test_multilayer_l2_escalates_yaml_allow():
     guardrail = MultiLayerGuardrail()
-    action = {"tool": "delete_records", "params": {"table": "employees", "count": 3}}
+    action = {"tool": "read_file", "params": {"path": "/data/payroll/active_salaries.csv"}}
     agent_context = {
         "agent_id": "agent1",
-        "agent_purpose": "HR management",
+        "agent_purpose": "General report viewer",
         "session": {"action_count_this_session": 1, "current_hour": 12}
     }
     
     result = guardrail.evaluate(action, agent_context, dry_run=True)
-    # L1 says allow (count 3 < 40), but L2 classifies employees as PII/FINANCIAL which escalates to HITL
+    # L1 says allow (no confidential keywords), but L2 classifies payroll folder as PII/FINANCIAL which escalates to HITL
     assert result.outcome == "pending_review"
     assert "PII" in result.layer2["tags"]
 
